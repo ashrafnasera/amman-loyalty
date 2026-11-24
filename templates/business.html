@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% from 'ui.html' import csrf %}
+{% block title %}{{ business.name }}{% endblock %}
+{% block content %}
+<div class="container">
+ <a href="{{ url_for('public.home') }}" class="text-link"><i data-lucide="map"></i> خريطة المتاجر</a>
+ <section class="profile-hero"><span class="pill"><span class="dot" style="--category:{{ business.color }}"></span>{{ business.category }}</span><h1>{{ business.name }}</h1><p>{{ business.description }}</p><div class="cluster"><span><i data-lucide="map-pin"></i> {{ business.address }}</span><span><i data-lucide="sparkles"></i> {{ business.rate }} نقطة لكل دينار</span></div></section>
+ {% if g.user and g.user.role == 'customer' %}<div class="card inset"><strong>رصيدك عند هذا المتجر</strong><span class="pill mint">{{ balance }} نقطة</span></div>{% endif %}
+ <div class="split">
+  <section><h2>العروض الحالية</h2><div class="stack">{% for offer in offers %}<article class="card"><i data-lucide="tag"></i><h3>{{ offer.title }}</h3><p>{{ offer.description }}</p></article>{% else %}<div class="card muted">ما في عروض حالياً.</div>{% endfor %}</div></section>
+  <section><h2>المكافآت</h2><div class="stack">{% for reward in rewards %}
+   <article class="card"><i data-lucide="gift"></i><h3>{{ reward.title }}</h3><p>{{ reward.cost }} نقطة</p>
+   {% if g.user and g.user.role == 'customer' %}<form method="post" action="{{ url_for('public.redeem', reward_id=reward.id) }}">{{ csrf() }}<input type="hidden" name="request_id" value="{{ request_key() }}"><button class="btn" {% if balance < reward.cost or g.user.suspended %}disabled{% endif %}>{{ 'استبدل النقاط' if balance >= reward.cost else 'الرصيد غير كافٍ' }}</button></form>{% elif not g.user %}<a href="{{ url_for('login') }}">سجّل الدخول لاستبدالها</a>{% endif %}
+   </article>
+  {% else %}<div class="card muted">ما في مكافآت حالياً.</div>{% endfor %}</div></section>
+ </div>
+</div>
+{% endblock %}

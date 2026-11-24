@@ -1,0 +1,3 @@
+{% extends 'base.html' %}
+{% block title %}رمز الشراء{% endblock %}
+{% block content %}<section class="card narrow auth"><h1>رمز تأكيد الشراء</h1><p>امسح الرمز من هاتف العميل خلال خمس دقائق لإضافة {{ points }} نقطة.</p><img class="qr" alt="رمز QR لتأكيد الشراء" width="220" height="220" src="data:image/svg+xml;base64,{{ qr }}"><label>الرمز اليدوي<input dir="ltr" readonly value="{{ token }}"></label><div class="cluster"><a class="btn outline" href="{{ link }}">رابط التأكيد</a><a class="btn" href="{{ url_for('dashboard.dashboard') }}">لوحة التحكم</a></div></section>{% endblock %}

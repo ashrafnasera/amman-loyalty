@@ -1,0 +1,17 @@
+{% macro csrf() %}<input type="hidden" name="csrf" value="{{ csrf_token() }}">{% endmacro %}
+{% macro stats(values) %}
+<div class="stats">{% for label,value in values.items() %}<div class="card stat"><span>{{ label }}</span><strong>{{ value }}</strong></div>{% endfor %}</div>
+{% endmacro %}
+{% macro ledger(items, staff=false) %}
+{% if items %}
+<div class="table-scroll"><table><thead><tr><th>المتجر</th>{% if staff %}<th>العميل</th>{% endif %}<th>العملية</th><th>النقاط</th><th>التاريخ</th></tr></thead><tbody>
+{% for item in items[:20] %}<tr><td>{{ item.business }}</td>{% if staff %}<td>{{ item.customer }}</td>{% endif %}<td>{{ 'شراء موثّق' if item.purchase_id else 'استبدال مكافأة' if item.redemption_id else 'مكافأة تحدٍّ' }}</td><td dir="ltr" class="{{ 'positive' if item.delta >= 0 else 'negative' }}">{{ '%+d' % item.delta }}</td><td>{{ item.created_at|date }}</td></tr>{% endfor %}
+</tbody></table></div>
+{% else %}<p class="muted empty">ما في عمليات لسه.</p>{% endif %}
+{% endmacro %}
+{% macro pager(page, more) %}
+{% if page > 1 or more %}<div class="cluster pages">
+{% if page > 1 %}<a class="btn outline" href="?page={{ page-1 }}">الصفحة السابقة</a>{% endif %}
+{% if more %}<a class="btn outline" href="?page={{ page+1 }}">الصفحة التالية</a>{% endif %}
+</div>{% endif %}
+{% endmacro %}

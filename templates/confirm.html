@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% from 'ui.html' import csrf %}
+{% block title %}تأكيد الشراء{% endblock %}
+{% block content %}
+<section class="card narrow" id="confirm-purchase">
+ <span class="hero-icon"><i data-lucide="scan-line"></i></span><h1>تأكيد الشراء</h1>
+ {% if g.user and g.user.role == 'customer' and not g.user.suspended %}
+ <p class="muted">امسح رمز QR بكاميرا جهازك أو أدخل الرمز من التاجر.</p>
+ <form method="post" class="fields">{{ csrf() }}<label>رمز الشراء<input dir="ltr" id="purchase-token" name="token" required maxlength="64" minlength="64" pattern="[a-f0-9]{64}" autocomplete="off"></label><button class="btn">أكّد الشراء</button></form>
+ {% elif not g.user %}
+ <p class="muted">سجّل دخولك كعميل لتأكيد الشراء.</p><a class="btn" href="{{ url_for('login', confirm=1) }}">تسجيل الدخول</a>
+ {% else %}<p class="muted">افتح الرابط من حساب العميل المرتبط بالإيصال.</p>{% endif %}
+</section>
+{% endblock %}

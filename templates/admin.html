@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% from 'ui.html' import csrf, ledger as ledger_table, stats, pager %}
+{% block title %}إدارة المنصّة{% endblock %}
+{% macro category_form(c=none) %}
+<form class="cluster" method="post" action="{{ url_for('dashboard.edit_category', category_id=c.id if c else none) }}">{{ csrf() }}<label>الاسم<input name="name" required maxlength="70" value="{{ c.name if c else '' }}"></label><label>لون الخريطة<input type="color" name="color" value="{{ c.color if c else '#268567' }}"></label><button class="btn outline">{{ 'حفظ' if c else 'إضافة تصنيف' }}</button></form>
+{% endmacro %}
+{% macro challenge_form(c=none) %}
+<form class="fields" method="post" action="{{ url_for('dashboard.edit_challenge', challenge_id=c.id if c else none) }}">
+ {{ csrf() }}<label>الاسم<input name="title" maxlength="120" required value="{{ c.title if c else '' }}"></label>
+ <label>الوصف<textarea name="description" maxlength="1500" required>{{ c.description if c else '' }}</textarea></label>
+ <div class="split"><label>البداية بتوقيت عمّان<input type="datetime-local" name="start" required value="{{ c.starts_at|input_date if c else '' }}"></label><label>النهاية بتوقيت عمّان<input type="datetime-local" name="end" required value="{{ c.ends_at|input_date if c else '' }}"></label></div>
+ <div class="split"><label>عدد المتاجر المطلوب<input type="number" name="goal" required min="1" max="100" value="{{ c.goal if c else 3 }}"></label><label>نقاط المكافأة<input type="number" name="bonus" required min="1" max="1000000" value="{{ c.bonus if c else 100 }}"></label></div>
+ <fieldset><legend>المتاجر المشاركة</legend><div class="options">{% for b in approved %}<label class="check"><input type="checkbox" name="businesses" value="{{ b.id }}" {{ 'checked' if c and b.id in memberships.get(c.id,[]) }}> {{ b.name }}</label>{% else %}<span class="muted">لا توجد متاجر معتمدة.</span>{% endfor %}</div></fieldset>
+ <button class="btn" {{ 'disabled' if not approved }}>حفظ التحدي</button>
+</form>
+{% endmacro %}
+{% block content %}
+<div class="container">
+ <div class="page-head"><h1>إدارة المنصّة</h1><p class="muted">تابع نشاط درب وأدر المتاجر والحسابات والتحديات.</p>
+ <nav class="cluster"><a class="chip" href="#approvals">المتاجر</a><a class="chip" href="#accounts">الحسابات</a><a class="chip" href="#categories">التصنيفات</a><a class="chip" href="#challenges">التحديات</a><a class="chip" href="#ledger">العمليات</a></nav></div>
+ <div class="stats">{% for label,value in rollup.items() %}<div class="card stat"><span>{{ label }}</span><strong>{{ value }}</strong></div>{% endfor %}</div>
+ <section class="section" id="approvals"><h2>مراجعة المتاجر</h2><div class="table-scroll"><table><thead><tr><th>المتجر</th><th>التاجر</th><th>الحالة</th><th>الإجراء</th></tr></thead><tbody>
+ {% for b in businesses[:20] %}<tr><td><strong>{{ b.name }}</strong><br><small>{{ b.category }} · {{ b.address }}</small></td><td>{{ b.owner }}</td><td><span class="pill {{ 'mint' if b.status == 'approved' }}">{{ {'approved':'معتمد','pending':'قيد المراجعة','rejected':'مرفوض'}[b.status] }}</span></td><td><form class="cluster" method="post" action="{{ url_for('dashboard.approve', business_id=b.id) }}">{{ csrf() }}{% if b.status != 'approved' %}<button class="btn outline" name="status" value="approved">اعتماد</button>{% endif %}{% if b.status != 'rejected' %}<button class="btn danger" name="status" value="rejected">رفض</button>{% endif %}</form></td></tr>{% else %}<tr><td colspan="4">لا توجد متاجر.</td></tr>{% endfor %}
+ </tbody></table></div></section>
+ <section class="section" id="accounts"><h2>الحسابات</h2><div class="table-scroll"><table><thead><tr><th>الاسم</th><th>البريد</th><th>الدور</th><th>الحالة</th><th>الإجراء</th></tr></thead><tbody>
+ {% for u in accounts[:20] %}<tr><td>{{ u.name }}</td><td dir="ltr">{{ u.email }}</td><td>{{ roles[u.role] }}</td><td>{{ 'موقوف' if u.suspended else 'فعّال' }}</td><td><form method="post" action="{{ url_for('dashboard.suspend', user_id=u.id) }}">{{ csrf() }}<button class="btn {{ 'outline' if u.suspended else 'danger' }}" name="suspended" value="{{ 0 if u.suspended else 1 }}">{{ 'تفعيل' if u.suspended else 'تعليق' }}</button></form></td></tr>{% else %}<tr><td colspan="5">لا توجد حسابات.</td></tr>{% endfor %}
+ </tbody></table></div></section>
+ <section class="section" id="categories"><h2>التصنيفات</h2><div class="grid">{% for c in categories %}<div class="card">{{ category_form(c) }}</div>{% endfor %}<div class="card">{{ category_form() }}</div></div></section>
+ <section class="section" id="challenges"><h2>التحديات الجغرافية</h2><div class="stack">
+ {% for c in challenges[:20] %}<details class="card"><summary>{{ c.title }} <span class="muted">{{ c.starts_at|date }}</span></summary>{% if c.starts_at > now() %}{{ challenge_form(c) }}{% else %}<p>{{ c.description }}</p><p>{{ c.goal }} متاجر · {{ c.bonus }} نقطة · ينتهي {{ c.ends_at|date }}</p><a href="{{ url_for('public.home',challenge=c.id) }}">عرض الخريطة</a>{% endif %}</details>{% endfor %}
+ <details class="card"><summary>إضافة تحدٍّ</summary>{{ challenge_form() }}</details></div></section>
+ <section class="section" id="ledger"><h2>سجل النقاط على المنصّة</h2>{{ ledger_table(ledger,true) }}</section>
+ {{ pager(page,[ledger|length,businesses|length,accounts|length,challenges|length]|max > 20) }}
+</div>
+{% endblock %}

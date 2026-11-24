@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+{% from 'ui.html' import csrf, ledger as ledger_table, stats %}
+{% block title %}لوحة التاجر{% endblock %}
+{% macro business_form(b=none) %}
+<form class="fields" method="post" action="{{ url_for('dashboard.save_business', business_id=b.id if b else none) }}">
+ {{ csrf() }}
+ <div class="split"><label>اسم المتجر<input name="name" maxlength="120" required value="{{ b.name if b else '' }}"></label>
+ <label>التصنيف<select name="category" required><option value="">اختر تصنيفاً</option>{% for c in categories %}<option value="{{ c.id }}" {{ 'selected' if b and c.id == b.category_id }}>{{ c.name }}</option>{% endfor %}</select></label></div>
+ <label>الوصف<textarea name="description" maxlength="2000" required>{{ b.description if b else '' }}</textarea></label>
+ <div class="split"><label>العنوان<input name="address" maxlength="240" required value="{{ b.address if b else '' }}"></label><label>النقاط لكل دينار<input type="number" name="rate" min="1" max="1000" required value="{{ b.rate if b else 10 }}"></label></div>
+ <p class="muted">اضغط على الخريطة لتثبيت موقع المتجر.</p>
+ <div class="location-picker" aria-label="اختيار موقع المتجر"></div>
+ <div class="split"><label>خط العرض<input dir="ltr" name="latitude" type="number" step="any" min="-85" max="85" required value="{{ b.latitude if b else '' }}"></label><label>خط الطول<input dir="ltr" name="longitude" type="number" step="any" min="-180" max="180" required value="{{ b.longitude if b else '' }}"></label></div>
+ <button class="btn">حفظ المتجر</button>
+</form>
+{% endmacro %}
+{% macro catalog_form(b, kind, item=none) %}
+<form class="fields catalog" method="post" action="{{ url_for('dashboard.catalog', business_id=b.id, kind=kind, item_id=item.id if item else none) }}">
+ {{ csrf() }}
+ <label>العنوان<input name="title" maxlength="120" required value="{{ item.title if item else '' }}"></label>
+ {% if kind == 'offers' %}<label>الوصف<textarea name="description" maxlength="1000" required>{{ item.description if item else '' }}</textarea></label>
+ {% else %}<label>سعر المكافأة بالنقاط<input type="number" min="1" max="1000000" name="cost" required value="{{ item.cost if item else '' }}"></label>{% endif %}
+ <div class="inset"><label class="check"><input type="checkbox" name="active" value="1" {{ 'checked' if not item or item.active }}> فعّال</label><button class="btn outline">{{ 'حفظ' if item else 'إضافة' }}</button></div>
+</form>
+{% endmacro %}
+{% block content %}
+<div class="container">
+ <div class="page-head inset"><div><h1>لوحة التاجر</h1><p class="muted">أهلاً {{ g.user.name }}، أدر متاجرك وبرنامج المكافآت.</p></div><a class="btn" href="#new"><i data-lucide="plus"></i> تسجيل متجر</a></div>
+ {% for b in businesses %}
+ <section class="merchant-section" id="business-{{ b.id }}">
+  <div class="inset"><h2>{{ b.name }}</h2><span class="pill {{ 'mint' if b.status == 'approved' }}">{{ {'approved':'معتمد','pending':'قيد المراجعة','rejected':'مرفوض'}[b.status] }}</span></div>
+  {{ stats(b.stats) }}
+  {% if b.status == 'approved' %}
+  <div class="split">
+   <article class="card"><h3><i data-lucide="scan-line"></i> تسجيل شراء</h3><form method="post" class="fields" action="{{ url_for('dashboard.issue', business_id=b.id) }}">{{ csrf() }}<label>بريد العميل<input name="email" type="email" dir="ltr" required maxlength="254"></label><div class="split"><label>رقم الإيصال<input name="receipt" maxlength="80" required></label><label>المبلغ بالدينار<input name="amount" type="number" min=".001" max="100000" step=".001" required></label></div><button class="btn">إنشاء رمز QR</button></form></article>
+   <article class="card"><h3><i data-lucide="gift"></i> تسليم مكافأة</h3><form method="post" class="fields" action="{{ url_for('dashboard.claim', business_id=b.id) }}">{{ csrf() }}<label>رمز التسليم من العميل<input name="code" dir="ltr" minlength="32" maxlength="32" pattern="[a-f0-9]{32}" required></label><button class="btn">تأكيد التسليم</button></form></article>
+  </div>
+  {% else %}<p class="muted">يتاح تسجيل المشتريات وتسليم المكافآت بعد اعتماد المتجر.</p>{% endif %}
+  <div class="split">
+   {% for kind, title, items in [('offers','العروض',b.offers),('rewards','المكافآت',b.rewards)] %}
+   <section class="card"><h3>{{ title }}</h3>{% for item in items %}<details><summary>{{ item.title }} <span class="muted">{{ 'فعّال' if item.active else 'موقوف' }}</span></summary>{{ catalog_form(b,kind,item) }}</details>{% endfor %}<details><summary>إضافة {{ 'عرض' if kind == 'offers' else 'مكافأة' }}</summary>{{ catalog_form(b,kind) }}</details></section>
+   {% endfor %}
+  </div>
+  <details class="card"><summary>تعديل معلومات المتجر</summary>{{ business_form(b) }}</details>
+  <h3>أحدث معاملات النقاط</h3>{{ ledger_table(b.ledger, true) }}
+ </section>
+ {% endfor %}
+ <section class="card" id="new"><h2>تسجيل متجر جديد</h2>{% if categories %}{{ business_form() }}{% else %}<p>أضف تصنيفاً من لوحة الإدارة أولاً.</p>{% endif %}</section>
+</div>
+{% endblock %}

@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% from 'ui.html' import csrf %}
+{% block title %}{{ 'إنشاء حساب' if register else 'تسجيل الدخول' }}{% endblock %}
+{% block content %}
+<section class="narrow card auth">
+ <span class="hero-icon"><i data-lucide="map-pin"></i></span>
+ <h1>{{ 'انضم إلى درب' if register else 'أهلاً بعودتك' }}</h1>
+ <p class="muted">{{ 'افتح حساب عميل أو سجّل متجرك.' if register else 'سجّل دخولك للمتابعة.' }}</p>
+ <form method="post" class="fields">
+  {{ csrf() }}
+  {% if confirm %}<input type="hidden" name="confirm" value="1">{% endif %}
+  {% if register %}<label>الاسم<input name="name" required maxlength="100" autocomplete="name"></label>{% endif %}
+  <label>البريد الإلكتروني<input type="email" dir="ltr" name="email" maxlength="254" autocomplete="email" required></label>
+  <label>كلمة المرور<input type="password" name="password" maxlength="128" minlength="8" autocomplete="{{ 'new-password' if register else 'current-password' }}" required></label>
+  {% if register %}
+  <label>تأكيد كلمة المرور<input type="password" name="confirmation" minlength="8" maxlength="128" autocomplete="new-password" required></label>
+  <label>نوع الحساب<select name="role"><option value="customer">عميل</option><option value="merchant">تاجر</option></select></label>
+  {% endif %}
+  <button class="btn">{{ 'إنشاء حساب' if register else 'تسجيل الدخول' }}</button>
+ </form>
+ <p class="muted">{% if register %}عندك حساب؟ <a href="{{ url_for('login') }}">سجّل دخولك</a>{% else %}جديد على درب؟ <a href="{{ url_for('register') }}">أنشئ حساب</a>{% endif %}</p>
+</section>
+{% endblock %}

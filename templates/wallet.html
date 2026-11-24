@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% from 'ui.html' import ledger as ledger_table, pager %}
+{% block title %}محفظتي{% endblock %}
+{% block content %}
+<div class="container">
+ <div class="page-head inset"><div><h1>محفظتي</h1><p class="muted">أهلاً {{ g.user.name }}، تابع رصيدك ومشترياتك.</p></div><a class="btn" href="{{ url_for('public.confirm') }}"><i data-lucide="scan-line"></i> تأكيد شراء</a></div>
+ <div class="profile-hero balance"><div><span>رصيد المنصّة من التحديات</span><h2>{{ platform.balance if platform else 0 }} نقطة</h2></div><i data-lucide="wallet"></i></div>
+ <h2>أرصدة المتاجر</h2><div class="grid">{% for a in accounts %}<article class="card stat"><span>{{ a.name }}</span><strong>{{ a.balance }} نقطة</strong><a href="{{ url_for('public.business', business_id=a.id) }}">شاهد المكافآت</a></article>{% else %}<p class="muted">بتظهر نقاطك بعد أول شراء موثّق.</p>{% endfor %}</div>
+ <h2>المكافآت المستبدلة</h2><div class="grid">{% for r in redemptions %}<article class="card"><span class="pill">{{ 'تم التسليم' if r.claimed_at else 'بانتظار التسليم' }}</span><h3>{{ r.title }}</h3><p>{{ r.business }} · {{ r.cost }} نقطة</p>{% if not r.claimed_at %}<label>رمز التسليم<input dir="ltr" readonly value="{{ r.code }}"></label>{% endif %}</article>{% else %}<p class="muted">لسه ما استبدلت أي مكافأة.</p>{% endfor %}</div>
+ <h2>سجل النقاط</h2>{{ ledger_table(ledger) }}{{ pager(page, ledger|length > 20) }}
+</div>
+{% endblock %}

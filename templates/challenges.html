@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% from 'ui.html' import csrf %}
+{% block title %}التحديات{% endblock %}
+{% block content %}
+<section class="container">
+ <div class="page-head"><span class="hero-icon"><i data-lucide="flag"></i></span><h1>التحديات</h1><p class="muted">تسوّق من متاجر مشاركة واجمع نقاط إضافية في رصيد المنصّة.</p></div>
+ <div class="grid">
+ {% for c in challenges %}
+ {% set active = c.starts_at <= now() <= c.ends_at %}
+ <article class="card challenge">
+  <div class="inset"><span class="pill {{ 'mint' if active }}">{{ 'مكتمل' if c.completed_at else 'فعّال' if active else 'قادم' if c.starts_at > now() else 'منتهٍ' }}</span><span class="pill"><i data-lucide="sparkles"></i> {{ c.bonus }} نقطة</span></div>
+  <h2>{{ c.title }}</h2><p>{{ c.description }}</p>
+  <p class="muted">{{ c.goal }} متاجر مختلفة من أصل {{ c.stores }} · ينتهي {{ c.ends_at|date }}</p>
+  {% if c.participant %}<label>تقدّمك {{ c.visits }} / {{ c.goal }} <progress value="{{ c.visits }}" max="{{ c.goal }}"></progress></label>{% endif %}
+  <div class="cluster">
+   <a class="btn outline" href="{{ url_for('public.home', challenge=c.id) }}"><i data-lucide="map"></i> مواقع التحدي</a>
+   {% if active and not c.participant %}
+    {% if g.user and g.user.role == 'customer' and not g.user.suspended %}<form method="post" action="{{ url_for('public.join', challenge_id=c.id) }}">{{ csrf() }}<button class="btn">انضم للتحدي</button></form>{% elif not g.user %}<a class="btn" href="{{ url_for('login') }}">دخول للانضمام</a>{% endif %}
+   {% endif %}
+  </div>
+ </article>
+ {% else %}<p class="muted">ما في تحديات حالياً.</p>{% endfor %}
+ </div>
+</section>
+{% endblock %}
